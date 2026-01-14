@@ -1,1 +1,0 @@
-# AgriGuard-Gemini-Powered-Precision-Farming-Integrated-Pest-Management
