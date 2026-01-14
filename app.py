@@ -65,4 +65,6 @@ def generate_ipm(severity, wind_speed):
         plan.append("Avoid spraying due to high wind conditions.")
 
     plan.append("Adopt companion planting (e.g., marigold) for pest prevention.")
-    plan.append("Regular monitoring is advised for early detect
+    plan.append("Regular monitoring is advised for early detect")
+    
+    return plan
