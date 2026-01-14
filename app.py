@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-import cv2
 
 # --------------------------------------------------
 # Page Configuration
@@ -16,135 +15,54 @@ st.title("🌱 AgriGuard")
 st.subheader("Gemini-Powered Precision Farming & Integrated Pest Management")
 
 st.markdown("""
-AgriGuard is an AI-powered farming assistant that performs
-image-based crop diagnosis and generates Integrated Pest Management (IPM)
-recommendations using multimodal reasoning.
+AgriGuard performs image-based crop health analysis and generates
+Integrated Pest Management (IPM) recommendations using a
+hybrid AI + rule-based decision engine.
 """)
 
 # --------------------------------------------------
-# Utility Functions (Model Logic)
+# Model Logic Functions
 # --------------------------------------------------
 
 def preprocess_image(image):
-    img = np.array(image)
-    img = cv2.resize(img, (224, 224))
-    return img
+    image = image.resize((224, 224))
+    img_array = np.array(image) / 255.0
+    return img_array
 
-def extract_visual_features(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    green_ratio = np.mean(hsv[:, :, 1])  # Saturation proxy
-    brightness = np.mean(hsv[:, :, 2])   # Stress indicator
-    return green_ratio, brightness
+def extract_features(img):
+    # Mean brightness and color variance as stress indicators
+    brightness = np.mean(img)
+    color_variance = np.var(img)
+    return brightness, color_variance
 
-def diagnose_crop(green_ratio, brightness):
-    if brightness < 80:
-        return "Severe Stress Detected", 3
-    elif brightness < 120:
-        return "Moderate Stress Detected", 2
+def assess_health(brightness, variance):
+    if brightness < 0.35 or variance < 0.02:
+        return "Severe Crop Stress", 3
+    elif brightness < 0.55:
+        return "Moderate Crop Stress", 2
     else:
         return "Healthy Crop", 1
 
-def pest_disease_inference(severity):
+def pest_disease_reasoning(severity):
     if severity == 3:
-        return "High probability of fungal disease or pest infestation"
+        return "High likelihood of pest infestation or fungal disease."
     elif severity == 2:
-        return "Early-stage pest or nutrient deficiency detected"
+        return "Early-stage pest attack or nutrient deficiency detected."
     else:
-        return "No visible pest or disease symptoms"
+        return "No visible pest or disease symptoms detected."
 
-def generate_ipm_plan(severity, weather):
-    recommendations = []
+def generate_ipm(severity, wind_speed):
+    plan = []
 
     if severity >= 2:
-        recommendations.append("Apply neem oil spray (3 ml/L) as organic control.")
+        plan.append("Apply neem oil spray (3 ml per liter) as organic control.")
         if severity == 3:
-            recommendations.append("Use targeted chemical pesticide as per crop advisory.")
+            plan.append("Use recommended chemical pesticide with safety measures.")
 
-    if weather["wind"] < 10:
-        recommendations.append("Spraying conditions optimal (low wind).")
+    if wind_speed <= 10:
+        plan.append("Spraying conditions are optimal (low wind speed).")
     else:
-        recommendations.append("Avoid spraying due to high wind speed.")
+        plan.append("Avoid spraying due to high wind conditions.")
 
-    recommendations.append("Adopt companion planting (e.g., marigold) for pest prevention.")
-
-    return recommendations
-
-# --------------------------------------------------
-# Image Upload
-# --------------------------------------------------
-st.header("📸 Upload Crop / Leaf Image")
-uploaded_image = st.file_uploader(
-    "Upload a clear crop or leaf image",
-    type=["jpg", "jpeg", "png"]
-)
-
-# --------------------------------------------------
-# Weather Input
-# --------------------------------------------------
-st.header("🌦️ Local Weather Conditions")
-temp = st.slider("Temperature (°C)", 10, 45, 28)
-humidity = st.slider("Humidity (%)", 20, 100, 65)
-wind = st.slider("Wind Speed (km/h)", 0, 30, 6)
-
-weather_data = {
-    "temperature": temp,
-    "humidity": humidity,
-    "wind": wind
-}
-
-# --------------------------------------------------
-# Analysis Pipeline
-# --------------------------------------------------
-if uploaded_image:
-    image = Image.open(uploaded_image)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-
-    if st.button("🔍 Analyze Crop"):
-        st.info("Running multimodal analysis pipeline...")
-
-        img = preprocess_image(image)
-        green_ratio, brightness = extract_visual_features(img)
-
-        health_status, severity = diagnose_crop(green_ratio, brightness)
-        pest_disease = pest_disease_inference(severity)
-        ipm_plan = generate_ipm_plan(severity, weather_data)
-
-        st.success("Analysis Complete")
-
-        # --------------------------------------------------
-        # Results
-        # --------------------------------------------------
-        st.subheader("🧪 Crop Health Assessment")
-        st.write(f"**Health Status:** {health_status}")
-        st.write(f"**Severity Level:** {severity} / 3")
-
-        st.subheader("🐛 Pest / Disease Diagnosis")
-        st.write(pest_disease)
-
-        st.subheader("🌱 Integrated Pest Management (IPM) Plan")
-        for rec in ipm_plan:
-            st.write(f"- {rec}")
-
-        st.caption(
-            "Inference Logic: Vision-based feature extraction + "
-            "rule-based agronomic decision engine. "
-            "Gemini Vision API integration planned for final deployment."
-        )
-
-# --------------------------------------------------
-# Conversational Interface
-# --------------------------------------------------
-st.header("🗣️ Ask AgriGuard")
-query = st.text_input("Ask a question about your crop:")
-
-if query:
-    st.write(
-        "Based on your crop condition and weather parameters, "
-        "early intervention and sustainable IPM practices are recommended."
-    )
-
-# --------------------------------------------------
-# Footer
-# --------------------------------------------------
-st.markdown("---")
-st.caption("Live Prototype | Kshitij 2026 | Gemini Track")
+    plan.append("Adopt companion planting (e.g., marigold) for pest prevention.")
+    plan.append("Regular monitoring is advised for early detect
